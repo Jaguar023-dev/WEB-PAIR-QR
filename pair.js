@@ -4,6 +4,8 @@ const { exec } = require("child_process");
 let router = express.Router();
 const pino = require("pino");
 const { Boom } = require("@hapi/boom");
+const { upload } = require('./mega');
+
 const MESSAGE = process.env.MESSAGE || `
 *SESSION GENERATED SUCCESSFULY* ✅
 
@@ -14,22 +16,11 @@ https://github.com/GuhailTechInfo/ULTRA-MD
 https://t.me/GlobalBotInc
 https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07
 
-
 *Yᴏᴜ-ᴛᴜʙᴇ ᴛᴜᴛᴏʀɪᴀʟꜱ* 🪄 
 https://youtube.com/GlobalTechInfo
 
 *ULTRA-MD--WHATTSAPP-BOT* 🥀
 `;
-
-const { upload } = require('./mega');
-const {
-    default: makeWASocket,
-    useMultiFileAuthState,
-    delay,
-    makeCacheableSignalKeyStore,
-    Browsers,
-    DisconnectReason
-} = require("@whiskeysockets/baileys");
 
 // Ensure the directory is empty when the app starts
 if (fs.existsSync('./auth_info_baileys')) {
@@ -40,8 +31,20 @@ router.get('/', async (req, res) => {
     let num = req.query.number;
 
     async function SUHAIL() {
-        const { state, saveCreds } = await useMultiFileAuthState(`./auth_info_baileys`);
         try {
+            // ✅ Dynamically import Baileys (ESM)
+            const baileys = await import('@whiskeysockets/baileys');
+            const {
+                makeWASocket,
+                useMultiFileAuthState,
+                delay,
+                makeCacheableSignalKeyStore,
+                Browsers,
+                DisconnectReason
+            } = baileys.default;
+
+            const { state, saveCreds } = await useMultiFileAuthState(`./auth_info_baileys`);
+            
             let Smd = makeWASocket({
                 auth: {
                     creds: state.creds,
@@ -73,7 +76,7 @@ router.get('/', async (req, res) => {
                         const auth_path = './auth_info_baileys/';
                         let user = Smd.user.id;
 
-                        // Define randomMegaId function to generate random IDs
+                        // Generate random file name
                         function randomMegaId(length = 6, numberLength = 4) {
                             const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                             let result = '';
@@ -87,14 +90,12 @@ router.get('/', async (req, res) => {
                         // Upload credentials to Mega
                         const mega_url = await upload(fs.createReadStream(auth_path + 'creds.json'), `${randomMegaId()}.json`);
                         const Id_session = mega_url.replace('https://mega.nz/file/', '');
-
                         const Scan_Id = Id_session;
 
                         let msgsss = await Smd.sendMessage(user, { text: Scan_Id });
                         await Smd.sendMessage(user, { text: MESSAGE }, { quoted: msgsss });
                         await delay(1000);
-                        try { await fs.emptyDirSync(__dirname + '/auth_info_baileys'); } catch (e) {}
-
+                        try { fs.emptyDirSync(__dirname + '/auth_info_baileys'); } catch (e) {}
                     } catch (e) {
                         console.log("Error during file upload or message send: ", e);
                     }
@@ -103,7 +104,6 @@ router.get('/', async (req, res) => {
                     await fs.emptyDirSync(__dirname + '/auth_info_baileys');
                 }
 
-                // Handle connection closures
                 if (connection === "close") {
                     let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
                     if (reason === DisconnectReason.connectionClosed) {
@@ -116,7 +116,7 @@ router.get('/', async (req, res) => {
                     } else if (reason === DisconnectReason.timedOut) {
                         console.log("Connection TimedOut!");
                     } else {
-                        console.log('Connection closed with bot. Please run again.');
+                        console.log('Connection closed with bot. Restarting...');
                         console.log(reason);
                         await delay(5000);
                         exec('pm2 restart qasim');
@@ -128,7 +128,6 @@ router.get('/', async (req, res) => {
             console.log("Error in SUHAIL function: ", err);
             exec('pm2 restart qasim');
             console.log("Service restarted due to error");
-            SUHAIL();
             await fs.emptyDirSync(__dirname + '/auth_info_baileys');
             if (!res.headersSent) {
                 await res.send({ code: "Try After Few Minutes" });
@@ -140,4 +139,3 @@ router.get('/', async (req, res) => {
 });
 
 module.exports = router;
-                    
