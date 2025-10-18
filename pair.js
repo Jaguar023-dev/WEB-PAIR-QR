@@ -22,7 +22,7 @@ https://youtube.com/GlobalTechInfo
 *ULTRA-MD--WHATTSAPP-BOT* 🥀
 `;
 
-// Ensure the directory is empty when the app starts
+// Clean auth folder on startup
 if (fs.existsSync('./auth_info_baileys')) {
     fs.emptyDirSync(__dirname + '/auth_info_baileys');
 }
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 
     async function SUHAIL() {
         try {
-            // ✅ Dynamically import Baileys (ESM)
+            // ✅ Dynamically import Baileys (no .default)
             const baileys = await import('@whiskeysockets/baileys');
             const {
                 makeWASocket,
@@ -41,10 +41,10 @@ router.get('/', async (req, res) => {
                 makeCacheableSignalKeyStore,
                 Browsers,
                 DisconnectReason
-            } = baileys.default;
+            } = baileys;
 
             const { state, saveCreds } = await useMultiFileAuthState(`./auth_info_baileys`);
-            
+
             let Smd = makeWASocket({
                 auth: {
                     creds: state.creds,
@@ -71,8 +71,6 @@ router.get('/', async (req, res) => {
                 if (connection === "open") {
                     try {
                         await delay(10000);
-                        if (fs.existsSync('./auth_info_baileys/creds.json'));
-
                         const auth_path = './auth_info_baileys/';
                         let user = Smd.user.id;
 
